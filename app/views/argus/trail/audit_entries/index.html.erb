@@ -1,0 +1,101 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Audit Log</h1>
+      <p class="text-sm text-gray-500 mt-1">Every role assignment and permission grant/revoke, in order</p>
+    </div>
+  </div>
+
+  <% if params[:subject_type].present? || params[:subject_id].present? || params[:role_id].present? %>
+    <div class="mb-4 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-800">
+      Filtered view.
+      <%= link_to "Clear filter", audit_entries_path, class: "ml-2 text-blue-600 hover:underline font-medium" %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-gray-900"><%= Argus::Trail::AuditEntry.count %></p>
+      <p class="text-xs text-gray-500 mt-0.5">Total Events</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-blue-600"><%= Argus::Trail::AuditEntry.where("created_at >= ?", Time.zone.today.beginning_of_day).count %></p>
+      <p class="text-xs text-gray-500 mt-0.5">Today</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-gray-900"><%= Argus::Trail::AuditEntry.select(:subject_type, :subject_id).distinct.count %></p>
+      <p class="text-xs text-gray-500 mt-0.5">Distinct Subjects</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <% if @pages.any? %>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Event</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Change</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Changed By</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">When</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+          <% @pages.each do |entry| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                  <%= event_type_label(entry.event_type) %>
+                </span>
+              </td>
+
+              <td class="px-6 py-4 text-sm text-gray-800">
+                <%= link_to entry.subject_label, audit_entries_path(subject_type: entry.subject_type, subject_id: entry.subject_id), class: "text-blue-600 hover:underline" %>
+              </td>
+
+              <td class="px-6 py-4">
+                <% if entry.event_type == "role_assigned" %>
+                  <div class="flex items-center gap-2">
+                    <% if entry.from_role_name %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <%= role_badge_class(entry.from_role_name) %>"><%= entry.from_role_name %></span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">NONE</span>
+                    <% end %>
+                    <span class="text-gray-400">→</span>
+                    <% if entry.role_name %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <%= role_badge_class(entry.role_name) %>"><%= entry.role_name %></span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">REMOVED</span>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <div class="text-sm text-gray-700">
+                    <span class="<%= entry.event_type == 'permission_granted' ? 'text-green-700' : 'text-red-700' %> font-medium">
+                      <%= entry.event_type == "permission_granted" ? "Granted" : "Revoked" %>
+                    </span>
+                    “<%= entry.permission_name&.humanize %>” on role <%= entry.role_name %>
+                  </div>
+                <% end %>
+              </td>
+
+              <td class="px-6 py-4 text-sm text-gray-600"><%= entry.changed_by_label %></td>
+
+              <td class="px-6 py-4 whitespace-nowrap">
+                <p class="text-sm text-gray-700"><%= entry.created_at.strftime("%d %b %Y") %></p>
+                <p class="text-xs text-gray-400"><%= entry.created_at.strftime("%I:%M %p") %></p>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <div class="px-6 py-4 border-t border-gray-100 flex justify-center">
+        <%= argus_trail_paginate(@pages) %>
+      </div>
+    <% else %>
+      <div class="text-center py-16">
+        <p class="text-gray-500 text-sm">No audit events recorded yet.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+<% if pages.respond_to?(:total_pages) && pages.total_pages > 1 %>
+  <div class="flex items-center justify-center gap-3 text-sm py-2">
+    <%= link_to "← Prev", url_for(request.query_parameters.merge(page: [ pages.current_page - 1, 1 ].max)),
+        class: "px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 #{'pointer-events-none opacity-40' if pages.current_page <= 1}" %>
+    <span class="text-gray-500">Page <%= pages.current_page %> of <%= pages.total_pages %></span>
+    <%= link_to "Next →", url_for(request.query_parameters.merge(page: [ pages.current_page + 1, pages.total_pages ].min)),
+        class: "px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 #{'pointer-events-none opacity-40' if pages.current_page >= pages.total_pages}" %>
+  </div>
+<% end %>

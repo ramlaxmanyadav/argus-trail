@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Role &amp; Permission Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= yield :head %>
+
+  <!--
+    Self-contained by design so the engine's screens render correctly in any
+    host regardless of its asset pipeline/Tailwind setup. Override this
+    layout (or set config.layout to a host layout) via the `views` generator
+    if you'd rather ship your own compiled CSS.
+  -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-14">
+      <%= link_to "Roles", roles_path, class: "text-sm font-semibold text-gray-700 hover:text-blue-600" %>
+      <%= link_to "Permissions", permissions_path, class: "text-sm font-semibold text-gray-700 hover:text-blue-600" %>
+      <%= link_to "Audit Log", audit_entries_path, class: "text-sm font-semibold text-gray-700 hover:text-blue-600" %>
+    </div>
+  </nav>
+
+  <% flash.each do |type, message| %>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+      <div class="rounded-lg px-4 py-2.5 text-sm <%= type.to_s == "alert" ? "bg-red-50 text-red-700 border border-red-200" : "bg-green-50 text-green-700 border border-green-200" %>">
+        <%= message %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= yield %>
+</body>
+</html>

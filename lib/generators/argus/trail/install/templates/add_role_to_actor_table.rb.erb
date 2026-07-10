@@ -1,0 +1,5 @@
+class AddRoleTo<%= actor_table.camelize %> < ActiveRecord::Migration<%= migration_version %>
+  def change
+    add_reference :<%= actor_table %>, :role, null: true, foreign_key: { to_table: :argus_trail_roles }
+  end
+end

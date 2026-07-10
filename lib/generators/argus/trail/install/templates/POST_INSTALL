@@ -1,0 +1,41 @@
+========================================================================
+Argus::Trail installed
+========================================================================
+
+Next steps:
+
+1. Run the migrations:
+     bin/rails db:migrate
+
+2. Add one line to the user/account model you configured as actor_class_name:
+
+     class User < ApplicationRecord
+       include Argus::Trail::Actor
+     end
+
+3. Tell the engine who's making each change, once, in your ApplicationController:
+
+     class ApplicationController < ActionController::Base
+       before_action { Argus::Trail.current_actor = current_user }
+     end
+
+4. If you have Pundit in your Gemfile, define policies for the engine's
+   records so its admin screens know who's allowed in, e.g.:
+
+     class Argus::Trail::RolePolicy < ApplicationPolicy
+       def index? = user.admin?
+       def show?  = user.admin?
+       # ...
+     end
+
+   Do the same for Argus::Trail::PermissionPolicy and
+   Argus::Trail::AuditEntryPolicy. No Pundit? Set config.authorize_with
+   in config/initializers/argus_trail.rb instead.
+
+5. Visit the mounted engine (default /admin/access, see config/routes.rb)
+   to manage roles, permissions, and view the audit log.
+
+Want to customize the HTML? Run:
+     bin/rails generate argus:trail:views
+to copy the views into app/views/argus/trail for editing.
+========================================================================

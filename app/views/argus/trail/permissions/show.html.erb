@@ -1,0 +1,27 @@
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-4">
+      <%= link_to "← Back", permissions_path, class: "text-gray-400 hover:text-gray-600" %>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= @permission.name.humanize %></h1>
+        <p class="text-sm text-gray-500 mt-0.5"><%= @permission.description %></p>
+      </div>
+    </div>
+    <%= link_to "Edit", edit_permission_path(@permission), class: "inline-flex items-center px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600" %>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-base font-semibold text-gray-900 mb-4">Roles with this permission (<%= @permission.roles.count %>)</h2>
+    <% if @permission.roles.any? %>
+      <div class="flex flex-wrap gap-2">
+        <% @permission.roles.order(:name).each do |role| %>
+          <%= link_to role_path(role), class: "#{role_badge_class(role.name)} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold" do %>
+            <%= role.name %>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-sm text-gray-400 italic">No roles have this permission yet.</p>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Permissions</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage the permissions roles can be granted</p>
+    </div>
+    <%= link_to "New Permission", new_permission_path, class: "inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors" %>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <% if @permissions.any? %>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Permission</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Roles</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @permissions.each do |permission| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= permission.name.humanize %></td>
+              <td class="px-6 py-4 text-sm text-gray-600"><%= permission.description %></td>
+              <td class="px-6 py-4 text-sm text-gray-600"><%= permission.roles.count %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex items-center justify-end gap-3">
+                  <%= link_to "View", permission_path(permission), class: "text-blue-600 hover:text-blue-800" %>
+                  <%= link_to "Edit", edit_permission_path(permission), class: "text-yellow-600 hover:text-yellow-800" %>
+                  <%= button_to "Delete", permission_path(permission), method: :delete,
+                      data: { turbo_confirm: "Delete permission '#{permission.name}'?" },
+                      class: "text-red-600 hover:text-red-800 bg-transparent border-0 p-0 cursor-pointer font-medium" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="text-center py-16">
+        <p class="text-gray-500 text-sm">No permissions yet.</p>
+        <%= link_to "Create Permission", new_permission_path, class: "mt-4 inline-block text-blue-600 hover:underline text-sm font-medium" %>
+      </div>
+    <% end %>
+  </div>
+</div>

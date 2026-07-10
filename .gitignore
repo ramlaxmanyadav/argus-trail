@@ -1,0 +1,15 @@
+/.bundle/
+*.gem
+Gemfile.lock
+
+# Dummy app generated files
+/test/dummy/db/*.sqlite3
+/test/dummy/db/*.sqlite3-*
+/test/dummy/log/*.log
+/test/dummy/tmp/**/*
+!/test/dummy/tmp/**/.keep
+/test/dummy/storage/*
+!/test/dummy/storage/.keep
+/test/dummy/.bundle/
+
+.DS_Store
