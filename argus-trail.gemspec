@@ -5,7 +5,7 @@ Gem::Specification.new do |spec|
   spec.version     = Argus::Trail::VERSION
   spec.authors     = [ "Ram Laxman Yadav" ]
   spec.email       = [ "yadavramlaxman@gmail.com" ]
-  spec.homepage    = "https://github.com/reddoorz/argus-trail"
+  spec.homepage    = "https://github.com/ramlaxmanyadav/argus-trail"
   spec.summary     = "Mountable Rails engine for roles, permissions, and an audit trail of who changed what."
   spec.description = "Plug-and-play role/permission management with a unified audit log of role reassignments " \
                       "and permission grants/revokes, shipped as a mountable engine with paginated HTML admin " \
