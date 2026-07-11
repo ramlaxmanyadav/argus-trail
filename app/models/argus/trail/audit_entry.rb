@@ -5,7 +5,7 @@ module Argus
     # role_assigned/role_revoked events, or the Role for
     # permission_granted/permission_revoked events.
     class AuditEntry < ApplicationRecord
-      serialize :metadata, coder: JSON
+      attribute :metadata, :json
 
       belongs_to :subject, polymorphic: true
       belongs_to :changed_by, polymorphic: true, optional: true

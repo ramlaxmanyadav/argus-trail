@@ -25,5 +25,5 @@ Gem::Specification.new do |spec|
   # Only a hard dependency on Rails itself. Pundit and Kaminari are soft
   # dependencies detected at runtime via `defined?` — see lib/argus/trail/configuration.rb
   # and lib/argus/trail/pagination.rb — so hosts are never forced to install either.
-  spec.add_dependency "rails", ">= 7.1"
+  spec.add_dependency "rails", ">= 6.1"
 end

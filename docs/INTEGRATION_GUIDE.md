@@ -47,7 +47,9 @@ that working integration, not hypothetical.
 
 ## 2. Requirements
 
-- Rails >= 7.1 (tested on 8.1)
+- Rails >= 6.1 (tested on 8.1; the `AuditEntry#metadata` column uses the
+  `:json` attribute type rather than `serialize ..., coder:`, since the
+  latter is a 7.1+-only API)
 - A user/account model (any name, any table name)
 - Optional: [Pundit](https://github.com/varvet/pundit) for authorization,
   [Kaminari](https://github.com/kaminari/kaminari) for pagination. Neither is
