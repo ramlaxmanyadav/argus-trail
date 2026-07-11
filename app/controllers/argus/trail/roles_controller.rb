@@ -5,20 +5,20 @@ module Argus
       before_action :set_permissions, only: [ :new, :edit, :create, :update ]
 
       def index
-        authorize_access!(Role)
-        @roles = authorized_scope(Role).includes(:permissions).order(:name)
+        authorize_access!(role_class)
+        @roles = authorized_scope(role_class).includes(:permissions).order(:name)
       end
 
       def show
       end
 
       def new
-        @role = Role.new
+        @role = role_class.new
         authorize_access!(@role)
       end
 
       def create
-        @role = Role.new(role_params)
+        @role = role_class.new(role_params)
         authorize_access!(@role)
 
         if @role.save
@@ -54,17 +54,20 @@ module Argus
       private
 
       def set_role
-        @role = Role.find(params[:id])
+        @role = role_class.find(params[:id])
         authorize_access!(@role)
       end
 
       def set_permissions
-        @permissions = Permission.order(:name)
+        @permissions = permission_class.order(:name)
       end
 
       def role_params
         params.require(:role).permit(:name, :description)
       end
+
+      def role_class = Argus::Trail.config.role_class
+      def permission_class = Argus::Trail.config.permission_class
     end
   end
 end

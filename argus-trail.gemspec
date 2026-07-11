@@ -3,8 +3,8 @@ require_relative "lib/argus/trail/version"
 Gem::Specification.new do |spec|
   spec.name        = "argus-trail"
   spec.version     = Argus::Trail::VERSION
-  spec.authors     = [ "Ram Yadav" ]
-  spec.email       = [ "ram.yadav@reddoorz.com" ]
+  spec.authors     = [ "Ram Laxman Yadav" ]
+  spec.email       = [ "yadavramlaxman@gmail.com" ]
   spec.homepage    = "https://github.com/reddoorz/argus-trail"
   spec.summary     = "Mountable Rails engine for roles, permissions, and an audit trail of who changed what."
   spec.description = "Plug-and-play role/permission management with a unified audit log of role reassignments " \

@@ -10,11 +10,15 @@ module Argus
         end
       end
 
-      attr_accessor :actor_class_name, :changed_by_resolver, :authorize_with,
+      attr_accessor :actor_class_name, :role_class_name, :permission_class_name,
+                    :role_permission_class_name, :changed_by_resolver, :authorize_with,
                     :current_actor_method, :per_page, :layout
 
       def initialize
-        @actor_class_name    = "User"
+        @actor_class_name           = "User"
+        @role_class_name            = "Argus::Trail::Role"
+        @permission_class_name      = "Argus::Trail::Permission"
+        @role_permission_class_name = "Argus::Trail::RolePermission"
         @changed_by_resolver = -> { Argus::Trail::Current.actor }
         @authorize_with      = nil
         @current_actor_method = :current_user
@@ -24,6 +28,18 @@ module Argus
 
       def actor_class
         actor_class_name.to_s.constantize
+      end
+
+      def role_class
+        role_class_name.to_s.constantize
+      end
+
+      def permission_class
+        permission_class_name.to_s.constantize
+      end
+
+      def role_permission_class
+        role_permission_class_name.to_s.constantize
       end
     end
   end

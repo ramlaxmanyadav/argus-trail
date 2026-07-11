@@ -22,12 +22,19 @@ class CreateArgusTrailTables < ActiveRecord::Migration[8.1]
     add_index :argus_trail_role_permissions, [ :role_id, :permission_id ], unique: true,
               name: "index_argus_trail_role_permissions_on_role_id_and_permission_id"
 
+    create_table :argus_trail_role_assignments do |t|
+      t.references :actor, polymorphic: true, null: false
+      t.references :role, null: false, foreign_key: { to_table: :argus_trail_roles }
+      t.timestamps
+    end
+    add_index :argus_trail_role_assignments, [ :actor_type, :actor_id, :role_id ], unique: true,
+              name: "index_argus_trail_role_assignments_on_actor_and_role"
+
     create_table :argus_trail_audit_entries do |t|
       t.string :event_type, null: false
       t.references :subject, polymorphic: true, null: false
       t.references :changed_by, polymorphic: true, null: true
       t.references :role, foreign_key: { to_table: :argus_trail_roles }
-      t.references :from_role, foreign_key: { to_table: :argus_trail_roles }
       t.references :permission, foreign_key: { to_table: :argus_trail_permissions }
       t.text :metadata
       t.datetime :created_at, null: false

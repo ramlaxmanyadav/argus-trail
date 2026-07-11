@@ -1,7 +1,19 @@
 Argus::Trail.configure do |config|
   # The class name of your app's user/account model — the one that gets
-  # `include Argus::Trail::Actor` and a `role_id` column.
+  # `include Argus::Trail::Actor`. No column is added to this model's own
+  # table; roles are tracked in the engine's own polymorphic join table, so
+  # an actor may hold any number of roles (0..N).
   config.actor_class_name = "User"
+
+  # Rename the engine's Role/Permission/RolePermission model classes — useful
+  # if "Role"/"Permission" already collide with another gem or one of your
+  # own models. These still back onto the engine's own tables
+  # (argus_trail_roles / argus_trail_permissions / argus_trail_role_permissions)
+  # — this renames the class, it does not let you point at a pre-existing
+  # table with a different schema.
+  # config.role_class_name            = "Argus::Trail::Role"
+  # config.permission_class_name      = "Argus::Trail::Permission"
+  # config.role_permission_class_name = "Argus::Trail::RolePermission"
 
   # How the engine looks up "who made this change" when writing an audit
   # entry. Defaults to a per-request actor set via:

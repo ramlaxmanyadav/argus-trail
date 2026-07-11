@@ -54,19 +54,12 @@
               </td>
 
               <td class="px-6 py-4">
-                <% if entry.event_type == "role_assigned" %>
-                  <div class="flex items-center gap-2">
-                    <% if entry.from_role_name %>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <%= role_badge_class(entry.from_role_name) %>"><%= entry.from_role_name %></span>
-                    <% else %>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">NONE</span>
-                    <% end %>
-                    <span class="text-gray-400">→</span>
-                    <% if entry.role_name %>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <%= role_badge_class(entry.role_name) %>"><%= entry.role_name %></span>
-                    <% else %>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">REMOVED</span>
-                    <% end %>
+                <% if %w[role_assigned role_revoked].include?(entry.event_type) %>
+                  <div class="flex items-center gap-2 text-sm text-gray-700">
+                    <span class="<%= entry.event_type == 'role_assigned' ? 'text-green-700' : 'text-red-700' %> font-medium">
+                      <%= entry.event_type == "role_assigned" ? "Assigned" : "Revoked" %>
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <%= role_badge_class(entry.role_name) %>"><%= entry.role_name %></span>
                   </div>
                 <% else %>
                   <div class="text-sm text-gray-700">

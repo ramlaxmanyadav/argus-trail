@@ -7,7 +7,9 @@ Next steps:
 1. Run the migrations:
      bin/rails db:migrate
 
-2. Add one line to the user/account model you configured as actor_class_name:
+2. Add one line to the user/account model you configured as actor_class_name.
+   No migration needed on that model — roles live in the engine's own
+   polymorphic join table, so an actor can hold any number of roles:
 
      class User < ApplicationRecord
        include Argus::Trail::Actor

@@ -1,12 +1,14 @@
 module Argus
   module Trail
     class Role < ApplicationRecord
-      has_many :role_permissions, dependent: :destroy
+      has_many :role_permissions, class_name: Argus::Trail.config.role_permission_class_name, dependent: :destroy
       has_many :permissions, through: :role_permissions
 
-      # class_name as a string is only constantized when the association is
-      # actually used, so this is safe even before the host's actor class loads.
-      has_many :actors, class_name: Argus::Trail.config.actor_class_name, foreign_key: :role_id
+      # The join table itself is polymorphic (no migration needed on the
+      # host's actor table), but a has_many :through needs one concrete type
+      # to instantiate results as, hence source_type here.
+      has_many :role_assignments, class_name: "Argus::Trail::RoleAssignment", dependent: :destroy
+      has_many :actors, through: :role_assignments, source: :actor, source_type: Argus::Trail.config.actor_class_name
 
       validates :name, presence: true, uniqueness: true
       validates :description, presence: true
@@ -24,11 +26,11 @@ module Argus
         transaction do
           self.permission_ids = new_ids
 
-          Permission.where(id: added_ids).find_each do |permission|
+          Argus::Trail.config.permission_class.where(id: added_ids).find_each do |permission|
             record_permission_change("permission_granted", permission, changed_by)
           end
 
-          Permission.where(id: removed_ids).find_each do |permission|
+          Argus::Trail.config.permission_class.where(id: removed_ids).find_each do |permission|
             record_permission_change("permission_revoked", permission, changed_by)
           end
         end

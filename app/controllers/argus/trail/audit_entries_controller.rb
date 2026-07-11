@@ -5,7 +5,7 @@ module Argus
         authorize_access!(AuditEntry)
 
         @entries = authorized_scope(AuditEntry)
-                     .includes(:subject, :changed_by, :role, :from_role, :permission)
+                     .includes(:subject, :changed_by, :role, :permission)
                      .recent
 
         @entries = @entries.where(subject_type: params[:subject_type]) if params[:subject_type].present?

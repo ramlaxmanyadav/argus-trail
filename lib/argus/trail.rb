@@ -7,7 +7,7 @@ require "argus/trail/engine"
 
 module Argus
   module Trail
-    EVENT_TYPES = %w[role_assigned permission_granted permission_revoked].freeze
+    EVENT_TYPES = %w[role_assigned role_revoked permission_granted permission_revoked].freeze
 
     class << self
       def configure

@@ -12,4 +12,15 @@ Gemfile.lock
 !/test/dummy/storage/.keep
 /test/dummy/.bundle/
 
+# Editor / IDE / local dev tooling
+.idea/
+.vscode/
+.vs/
+.fleet/
+.claude/
+.cursor/
+*.swp
+*.swo
+*~
+
 .DS_Store
