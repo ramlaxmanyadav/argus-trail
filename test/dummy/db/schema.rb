@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_194346) do
     t.integer "subject_id", null: false
     t.string "subject_type", null: false
     t.index [ "changed_by_type", "changed_by_id" ], name: "index_argus_trail_audit_entries_on_changed_by"
+    t.index [ "created_at" ], name: "index_argus_trail_audit_entries_on_created_at"
     t.index [ "event_type" ], name: "index_argus_trail_audit_entries_on_event_type"
     t.index [ "permission_id" ], name: "index_argus_trail_audit_entries_on_permission_id"
     t.index [ "role_id" ], name: "index_argus_trail_audit_entries_on_role_id"
@@ -29,10 +30,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_194346) do
   end
 
   create_table "argus_trail_permissions", force: :cascade do |t|
+    t.string "action"
     t.datetime "created_at", null: false
     t.string "description"
+    t.string "module_name"
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index [ "module_name", "action" ], name: "index_argus_trail_permissions_on_module_name_and_action"
     t.index [ "name" ], name: "index_argus_trail_permissions_on_name", unique: true
   end
 

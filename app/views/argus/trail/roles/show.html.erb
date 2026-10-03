@@ -15,9 +15,9 @@
       <h2 class="text-base font-semibold text-gray-900 mb-4">Permissions (<%= @role.permissions.count %>)</h2>
       <% if @role.permissions.any? %>
         <div class="space-y-2">
-          <% @role.permissions.order(:name).each do |perm| %>
+          <% @role.permissions.order(:module_name, :action, :name).each do |perm| %>
             <div class="p-3 bg-indigo-50 rounded-lg">
-              <p class="text-sm font-medium text-indigo-900"><%= perm.name.humanize %></p>
+              <p class="text-sm font-medium text-indigo-900"><%= perm.display_name %></p>
               <p class="text-xs text-indigo-600 mt-0.5"><%= perm.description %></p>
             </div>
           <% end %>

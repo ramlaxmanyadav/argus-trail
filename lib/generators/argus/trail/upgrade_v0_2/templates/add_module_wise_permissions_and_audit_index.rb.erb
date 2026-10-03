@@ -1,0 +1,21 @@
+class ArgusTrailAddModuleWisePermissionsAndAuditIndex < ActiveRecord::Migration<%= migration_version %>
+  def change
+    # Every step below is guarded so this is safe to run twice, and safe even
+    # on a host where create_argus_trail_tables already created these (every
+    # check just becomes a no-op) — this migration only exists for hosts
+    # upgrading from a version of argus-trail that predates module-wise
+    # permissions.
+    unless column_exists?(:argus_trail_permissions, :module_name)
+      add_column :argus_trail_permissions, :module_name, :string
+    end
+    unless column_exists?(:argus_trail_permissions, :action)
+      add_column :argus_trail_permissions, :action, :string
+    end
+    unless index_exists?(:argus_trail_permissions, [ :module_name, :action ])
+      add_index :argus_trail_permissions, [ :module_name, :action ]
+    end
+    unless index_exists?(:argus_trail_audit_entries, :created_at)
+      add_index :argus_trail_audit_entries, :created_at
+    end
+  end
+end

@@ -113,6 +113,11 @@ actor holds, so an actor can have zero, one, or many rows here.
 
 ## 6. Step 4 — Opt your actor model in
 
+**The install generator does this for you** (`--actor=User` by default,
+pass `--actor=YourModel` otherwise) — it's idempotent, so rerunning it won't
+duplicate the `include`. Shown here for reference, or in case you skipped
+the generator step or your actor model didn't exist yet when you ran it:
+
 ```ruby
 # app/models/user.rb
 class User < ApplicationRecord
@@ -137,6 +142,11 @@ app, `User` also has `has_secure_password` and its own validations; the
 concern doesn't care.
 
 ## 7. Step 5 — Tell the engine who's acting
+
+**The install generator does this for you too**, adding the `before_action`
+below to `app/controllers/application_controller.rb` if it isn't already
+there. Shown here for reference, or in case `ApplicationController` didn't
+exist yet when you ran the generator.
 
 The engine needs to know who made each change so it can populate
 `AuditEntry#changed_by`. Wire it once, per-request, in your
@@ -176,10 +186,16 @@ Argus::Trail never assumes an auth library. Its base controller resolves
 authorization in this order, on every action:
 
 1. `config.authorize_with` proc, if you set one — always wins.
-2. Pundit, if `defined?(Pundit)` — uses Pundit's **normal namespaced lookup**,
-   so you just write real policies at the paths Pundit already expects.
-3. Neither configured → raises `Argus::Trail::Configuration::MissingAuthorization`
-   with an actionable message. **Fails closed**, never silently open.
+2. Pundit, if `defined?(Pundit)` **and** a policy class is actually defined
+   for the record (e.g. `Argus::Trail::RolePolicy`) — uses Pundit's **normal
+   namespaced lookup**, so you just write real policies at the paths Pundit
+   already expects.
+3. Neither configured (or Pundit is present but no policy was defined for
+   this record) → plug-and-play default: require a signed-in actor
+   (`current_actor` must be present), with no further restriction. This is
+   deliberately open-by-default so the admin screens work immediately with
+   zero config — tighten it with a Pundit policy or `authorize_with` once
+   you know who should actually have access (e.g. admins only).
 
 Which option to use, by authorization gem:
 
@@ -233,20 +249,8 @@ below before wiring it up — it's an easy trap.
 ```ruby
 # config/initializers/argus_trail.rb
 Argus::Trail.configure do |config|
-  config.authorize_with = ->(controller, record_or_class) do
-    controller.current_user&.admin? or
-      raise Argus::Trail::Configuration::MissingAuthorization if controller.current_user.nil?
-  end
+  config.authorize_with = ->(controller, record_or_class) { controller.current_user&.admin? }
 end
-```
-
-Simpler version, if you're fine with just returning a boolean (the engine
-doesn't require raising — a falsy return simply won't stop the action by
-itself, so pair it with your own `before_action` if you want a hard deny; in
-practice most hosts pull in Pundit for this reason):
-
-```ruby
-config.authorize_with = ->(controller, record_or_class) { controller.current_user&.admin? }
 ```
 
 ### Option C — CanCanCan
@@ -381,6 +385,51 @@ It diffs the requested id list against the role's current permissions and
 writes one `AuditEntry` per addition (`permission_granted`) and per removal
 (`permission_revoked`) — not a single generic "role updated" row.
 
+## 13a. Module-wise permissions and gating your own controllers
+
+Creating every `Permission` by hand doesn't scale once your app has more
+than a handful of controllers. `bin/rails argus_trail:fetch_permissions`
+scans `Rails.application.routes` and creates one `Permission` per
+controller/action pair it finds — `module_name` is the controller path
+(e.g. `"admin/accounts"`), `action` is normalized via
+`config.action_name_mapper` (`index`/`show` → `read`, `new`/`create` →
+`create`, `edit`/`update` → `update`, `destroy` → `destroy`, anything else
+kept as-is). It's safe to rerun — it only ever adds missing permissions.
+`bin/rails argus_trail:fetch_permissions:prune` removes the ones whose
+route no longer exists and aren't granted to any role (one still granted is
+left in place and reported, not silently deleted).
+
+The engine's own routes, and framework-internal ones (Rails health check,
+Active Storage, Action Mailbox/Text), are always skipped; add more via
+`config.permission_scan_excludes` (strings or Regexps matched against the
+controller path).
+
+Once generated, these show up in the role form grouped by module with a
+"select all" checkbox per group — assign them to roles exactly like any
+other permission, via `Role#sync_permissions!`.
+
+To actually enforce one of these on your own controller, `include
+Argus::Trail::Authorizable` — no further code:
+
+```ruby
+class AccountsController < ApplicationController
+  include Argus::Trail::Authorizable
+end
+```
+
+It adds a `before_action` that derives the required permission from
+`controller_path` + the same `action_name_mapper`-normalized action, and
+checks it via `actor.has_permission?(module_name, action)` — a 403 if
+there's no signed-in actor, or the actor's roles don't grant it. Check the
+same thing yourself anywhere else (views, services) with:
+
+```ruby
+user.has_permission?("admin/accounts", :read)
+```
+
+(`has_permission?` also still accepts a single plain permission name, for
+permissions you created by hand without a `module_name`/`action`.)
+
 ## 14. Configuration reference
 
 ```ruby
@@ -391,10 +440,12 @@ Argus::Trail.configure do |config|
   config.permission_class_name      = "Argus::Trail::Permission"
   config.role_permission_class_name = "Argus::Trail::RolePermission"
   config.changed_by_resolver  = -> { Argus::Trail.current_actor }
-  config.authorize_with       = nil        # nil => Pundit if present, else raises
+  config.authorize_with       = nil        # nil => Pundit if a policy's defined, else "any signed-in actor"
   config.current_actor_method = :current_user
   config.per_page              = 30
   config.layout                 = nil       # e.g. "application"
+  config.permission_scan_excludes = []     # extra controller paths for fetch_permissions to skip
+  config.action_name_mapper = ->(action) { ... }  # see lib/argus/trail/configuration.rb for the default
 end
 ```
 
@@ -511,12 +562,12 @@ true if **any** assigned role grants it — there's no built-in way to ask
 `role.permissions.exists?(name: "delete_users")` on a specific `Role` for
 that instead.
 
-#### Gotcha 4: `MissingAuthorization` on every request
+#### Gotcha 4: the admin screens are open to any signed-in actor
 
-If you see `Argus::Trail could not determine how to authorize access...`,
-neither Pundit is in your Gemfile nor `config.authorize_with` is set. This
-is deliberate fail-closed behavior — set one of the two (see
-[Step 6](#8-step-6--authorization)).
+With neither Pundit policies nor `config.authorize_with` set, Argus::Trail
+only requires a signed-in actor — it doesn't restrict to admins by default.
+If that's not what you want, define Pundit policies or set
+`config.authorize_with` (see [Step 6](#8-step-6--authorization)).
 
 #### Gotcha 5: audit entries show "System" as Changed By
 

@@ -10,14 +10,32 @@
     </div>
   <% end %>
 
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Module</label>
+      <%= f.text_field :module_name, placeholder: "e.g. admin/accounts",
+          class: "block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" %>
+      <p class="text-xs text-gray-400 mt-1">Leave blank for a one-off, module-less permission.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Action</label>
+      <%= f.text_field :action, placeholder: "e.g. read",
+          class: "block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" %>
+    </div>
+  </div>
+
   <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-1">Permission Name <span class="text-red-500">*</span></label>
-    <%= f.text_field :name, placeholder: "e.g. manage_users",
+    <label class="block text-sm font-semibold text-gray-700 mb-1">
+      Permission Name <% unless permission.module_name.present? %><span class="text-red-500">*</span><% end %>
+    </label>
+    <%= f.text_field :name, placeholder: "e.g. manage_users — auto-filled from Module/Action above when both are set",
         class: "block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" %>
   </div>
 
   <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+    <label class="block text-sm font-semibold text-gray-700 mb-1">
+      Description <% unless permission.module_name.present? %><span class="text-red-500">*</span><% end %>
+    </label>
     <%= f.text_area :description, rows: 2,
         class: "block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" %>
   </div>

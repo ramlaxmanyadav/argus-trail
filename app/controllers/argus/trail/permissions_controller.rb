@@ -56,7 +56,7 @@ module Argus
       end
 
       def permission_params
-        params.require(:permission).permit(:name, :description)
+        params.require(:permission).permit(:name, :description, :module_name, :action)
       end
 
       def permission_class = Argus::Trail.config.permission_class

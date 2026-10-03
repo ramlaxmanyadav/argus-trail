@@ -59,7 +59,7 @@ module Argus
       end
 
       def set_permissions
-        @permissions = permission_class.order(:name)
+        @grouped_permissions = permission_class.grouped_by_module
       end
 
       def role_params

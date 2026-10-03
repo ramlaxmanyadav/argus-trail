@@ -23,9 +23,10 @@ Argus::Trail.configure do |config|
   # config.changed_by_resolver = -> { Argus::Trail.current_actor }
 
   # Gate for who may use the roles/permissions/audit-log admin screens.
-  # Left unset, Argus::Trail falls back to Pundit if it's in your Gemfile
-  # (define Argus::Trail::RolePolicy / PermissionPolicy / AuditEntryPolicy)
-  # — otherwise it raises until you set one of the two.
+  # Left unset, Argus::Trail falls back to Pundit if it's in your Gemfile and
+  # a policy is defined (e.g. Argus::Trail::RolePolicy) — otherwise it just
+  # requires someone to be signed in, so the admin screens work out of the
+  # box with zero policies/config. Tighten either way you like:
   # config.authorize_with = ->(controller, record_or_class) { controller.current_user&.admin? }
 
   # The method the engine calls on its controllers to get the logged-in actor.
@@ -37,4 +38,16 @@ Argus::Trail.configure do |config|
   # Render engine screens inside one of your app's own layouts instead of
   # the engine's self-contained Tailwind-CDN layout.
   # config.layout = "application"
+
+  # Extra controller paths `bin/rails argus_trail:fetch_permissions` should
+  # skip when scanning your routes to build module-wise permissions (strings
+  # or Regexps). The engine's own routes and Rails-internal ones (health
+  # check, Active Storage, Action Mailbox/Text) are always skipped.
+  # config.permission_scan_excludes = [ "rails/conductor", %r{\Aadmin/sidekiq} ]
+
+  # How a scanned route's Rails action name maps to a permission's `action`
+  # column — also used by Argus::Trail::Authorizable. Defaults to collapsing
+  # index/show -> read, new/create -> create, edit/update -> update,
+  # destroy -> destroy, and keeping anything else (a custom action) as-is.
+  # config.action_name_mapper = ->(action) { action.to_s }
 end

@@ -2,40 +2,42 @@
 Argus::Trail installed
 ========================================================================
 
+Done automatically by this generator:
+  - config/initializers/argus_trail.rb written
+  - migration for argus_trail_roles/permissions/role_permissions/
+    role_assignments/audit_entries created
+  - Argus::Trail::Engine mounted in config/routes.rb (default /admin/access)
+  - `include Argus::Trail::Actor` added to your actor model (--actor=User
+    by default — rerun with --actor=YourModel if you skipped this)
+  - `before_action { Argus::Trail.current_actor = current_user }` added to
+    ApplicationController
+
 Next steps:
 
-1. Run the migrations:
+1. Run the migration:
      bin/rails db:migrate
 
-2. Add one line to the user/account model you configured as actor_class_name.
-   No migration needed on that model — roles live in the engine's own
-   polymorphic join table, so an actor can hold any number of roles:
+2. Generate module-wise permissions from your existing routes:
+     bin/rails argus_trail:fetch_permissions
 
-     class User < ApplicationRecord
-       include Argus::Trail::Actor
+   Re-run it any time you add controllers/actions — it only ever adds new
+   permissions. `bin/rails argus_trail:fetch_permissions:prune` removes ones
+   whose route is gone and that aren't granted to any role.
+
+3. Gate your own controllers behind a permission with one line — no further
+   code needed, the required permission is derived from the controller and
+   action automatically:
+
+     class AccountsController < ApplicationController
+       include Argus::Trail::Authorizable
      end
 
-3. Tell the engine who's making each change, once, in your ApplicationController:
-
-     class ApplicationController < ActionController::Base
-       before_action { Argus::Trail.current_actor = current_user }
-     end
-
-4. If you have Pundit in your Gemfile, define policies for the engine's
-   records so its admin screens know who's allowed in, e.g.:
-
-     class Argus::Trail::RolePolicy < ApplicationPolicy
-       def index? = user.admin?
-       def show?  = user.admin?
-       # ...
-     end
-
-   Do the same for Argus::Trail::PermissionPolicy and
-   Argus::Trail::AuditEntryPolicy. No Pundit? Set config.authorize_with
-   in config/initializers/argus_trail.rb instead.
-
-5. Visit the mounted engine (default /admin/access, see config/routes.rb)
-   to manage roles, permissions, and view the audit log.
+4. Visit the mounted engine (default /admin/access, see config/routes.rb) to
+   create roles, assign permissions, and assign roles to actors. With
+   neither Pundit policies nor config.authorize_with set, the admin screens
+   are open to any signed-in actor — define
+   Argus::Trail::RolePolicy/PermissionPolicy/AuditEntryPolicy (Pundit) or set
+   config.authorize_with to restrict further (e.g. to admins only).
 
 Want to customize the HTML? Run:
      bin/rails generate argus:trail:views

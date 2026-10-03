@@ -24,8 +24,37 @@ module Argus
                  as: :changed_by, class_name: "Argus::Trail::AuditEntry", dependent: :nullify
       end
 
-      def has_permission?(permission_name)
-        roles.joins(:permissions).exists?(Argus::Trail.config.permission_class.table_name => { name: permission_name })
+      # Two calling conventions:
+      #   has_permission?("manage_billing")        — match a plain permission name
+      #   has_permission?("admin/accounts", :read)  — match a module-wise permission
+      #                                                (module_name + action), e.g. the
+      #                                                ones `argus_trail:fetch_permissions`
+      #                                                generates from your routes.
+      #
+      # Memoized per actor instance/per (name|module+action) pair — a single
+      # request typically loads `current_user` once and then asks it several
+      # has_permission? questions across controllers/views (e.g. one per
+      # Argus::Trail::Authorizable-gated controller, plus any UI that checks
+      # a few more to decide what to show); without this, each of those re-ran
+      # the same roles->permissions join query. Cleared by sync_roles! below,
+      # since that's the only thing in this concern that can change the
+      # answer for an already-loaded actor.
+      def has_permission?(module_name_or_permission_name, action = nil)
+        cache_key = [ module_name_or_permission_name.to_s, action&.to_s ]
+        @argus_trail_permission_cache ||= {}
+        return @argus_trail_permission_cache[cache_key] if @argus_trail_permission_cache.key?(cache_key)
+
+        table = Argus::Trail.config.permission_class.table_name
+        scope = roles.joins(:permissions)
+
+        result =
+          if action.nil?
+            scope.exists?(table => { name: cache_key[0] })
+          else
+            scope.exists?(table => { module_name: cache_key[0], action: cache_key[1] })
+          end
+
+        @argus_trail_permission_cache[cache_key] = result
       end
 
       # Diffs the requested role ids against the actor's current ones and
@@ -49,6 +78,8 @@ module Argus
             argus_trail_record_role_change("role_revoked", role, changed_by)
           end
         end
+
+        @argus_trail_permission_cache = nil
       end
 
       private

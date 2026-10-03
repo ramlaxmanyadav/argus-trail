@@ -2,6 +2,8 @@ require "argus/trail/version"
 require "argus/trail/configuration"
 require "argus/trail/current"
 require "argus/trail/actor"
+require "argus/trail/authorizable"
+require "argus/trail/permission_scanner"
 require "argus/trail/pagination"
 require "argus/trail/engine"
 

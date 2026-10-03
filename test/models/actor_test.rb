@@ -70,6 +70,52 @@ class ActorTest < ActiveSupport::TestCase
     assert_not user.has_permission?("does_not_exist")
   end
 
+  test "has_permission? matches module-wise permissions by module_name and action" do
+    permission = Argus::Trail::Permission.create!(module_name: "admin/accounts", action: "read")
+    @role_b.sync_permissions!([ permission.id ], changed_by: @changer)
+
+    user = User.create!(email: "user-#{SecureRandom.hex(4)}@example.com")
+    user.sync_roles!([ @role_b.id ], changed_by: @changer)
+
+    assert user.has_permission?("admin/accounts", :read)
+    assert_not user.has_permission?("admin/accounts", :update)
+    assert_not user.has_permission?("admin/charges", :read)
+  end
+
+  test "has_permission? is memoized per actor instance, avoiding repeat queries" do
+    permission = Argus::Trail::Permission.create!(module_name: "admin/accounts", action: "read")
+    @role_b.sync_permissions!([ permission.id ], changed_by: @changer)
+
+    user = User.create!(email: "user-#{SecureRandom.hex(4)}@example.com")
+    user.sync_roles!([ @role_b.id ], changed_by: @changer)
+
+    assert user.has_permission?("admin/accounts", :read)
+
+    query_count = 0
+    subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+      query_count += 1 unless payload[:name] == "SCHEMA"
+    end
+    begin
+      3.times { user.has_permission?("admin/accounts", :read) }
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
+    assert_equal 0, query_count, "expected has_permission? to be memoized instead of re-querying"
+  end
+
+  test "sync_roles! clears the has_permission? cache so a later check sees the change" do
+    permission = Argus::Trail::Permission.create!(module_name: "admin/accounts", action: "read")
+    @role_b.sync_permissions!([ permission.id ], changed_by: @changer)
+
+    user = User.create!(email: "user-#{SecureRandom.hex(4)}@example.com")
+    assert_not user.has_permission?("admin/accounts", :read)
+
+    user.sync_roles!([ @role_b.id ], changed_by: @changer)
+
+    assert user.has_permission?("admin/accounts", :read)
+  end
+
   test "destroying an actor destroys its role assignments" do
     user = User.create!(email: "user-#{SecureRandom.hex(4)}@example.com")
     user.sync_roles!([ @role_a.id ], changed_by: @changer)

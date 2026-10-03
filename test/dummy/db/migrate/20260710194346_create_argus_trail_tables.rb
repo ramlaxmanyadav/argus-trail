@@ -10,9 +10,12 @@ class CreateArgusTrailTables < ActiveRecord::Migration[8.1]
     create_table :argus_trail_permissions do |t|
       t.string :name, null: false
       t.string :description
+      t.string :module_name
+      t.string :action
       t.timestamps
     end
     add_index :argus_trail_permissions, :name, unique: true
+    add_index :argus_trail_permissions, [ :module_name, :action ]
 
     create_table :argus_trail_role_permissions do |t|
       t.references :role, null: false, foreign_key: { to_table: :argus_trail_roles }
@@ -40,5 +43,6 @@ class CreateArgusTrailTables < ActiveRecord::Migration[8.1]
       t.datetime :created_at, null: false
     end
     add_index :argus_trail_audit_entries, :event_type
+    add_index :argus_trail_audit_entries, :created_at
   end
 end

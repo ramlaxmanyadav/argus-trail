@@ -13,6 +13,7 @@
         <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Permission</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Module</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Roles</th>
             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -21,9 +22,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <% @permissions.each do |permission| %>
             <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= permission.name.humanize %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= permission.display_name %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= permission.module_name&.humanize %></td>
               <td class="px-6 py-4 text-sm text-gray-600"><%= permission.description %></td>
-              <td class="px-6 py-4 text-sm text-gray-600"><%= permission.roles.count %></td>
+              <td class="px-6 py-4 text-sm text-gray-600"><%= permission.roles.size %></td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end gap-3">
                   <%= link_to "View", permission_path(permission), class: "text-blue-600 hover:text-blue-800" %>

@@ -1,0 +1,24 @@
+========================================================================
+Argus::Trail upgrade migration generated
+========================================================================
+
+This adds what's new to your existing install:
+  - module_name/action columns on argus_trail_permissions
+  - a composite index on (module_name, action)
+  - an index on argus_trail_audit_entries.created_at
+
+Next steps:
+
+1. Run it:
+     bin/rails db:migrate
+
+2. Generate module-wise permissions from your existing routes:
+     bin/rails argus_trail:fetch_permissions
+
+3. (Optional) Gate your own controllers behind a permission with one line:
+     class AccountsController < ApplicationController
+       include Argus::Trail::Authorizable
+     end
+
+See README.md and docs/INTEGRATION_GUIDE.md for the full picture.
+========================================================================

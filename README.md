@@ -38,38 +38,65 @@ the engine's own tables (`argus_trail_roles`, `argus_trail_permissions`,
 `argus_trail_role_assignments` is a polymorphic join table the engine owns
 end to end.
 
-## Wiring up your app
+It also wires up the two integration points that used to be manual steps:
+it adds `include Argus::Trail::Actor` to your actor model (`User` by
+default — pass `--actor=YourModel` if it's called something else) and adds
+`before_action { Argus::Trail.current_actor = current_user }` to your
+`ApplicationController`. Both are idempotent (safe to rerun) and skipped
+with an explanatory message if the corresponding file doesn't exist yet.
 
-**1. Opt your user model in:**
+## Generating module-wise permissions
+
+```bash
+bin/rails argus_trail:fetch_permissions
+```
+
+Scans your app's routes and creates a `Permission` for every controller
+action it finds (skipping the engine's own routes and framework-internal
+ones), grouped by `module_name` (the controller, e.g. `"admin/accounts"`)
+and `action` (`read`/`create`/`update`/`destroy`, or a custom action name
+as-is). It only ever adds permissions — safe to rerun after adding
+controllers/actions. `bin/rails argus_trail:fetch_permissions:prune` removes
+the ones whose route is gone and that aren't granted to any role.
+
+Visit the mounted engine to create roles and check off which module-wise
+permissions (and any permissions you created by hand) each one grants.
+
+## Gating your own controllers
 
 ```ruby
-class User < ApplicationRecord
-  include Argus::Trail::Actor
+class AccountsController < ApplicationController
+  include Argus::Trail::Authorizable
 end
 ```
 
-This adds `has_many :roles` (through the engine's join table),
-`has_permission?(name)` (true if *any* assigned role has that permission),
-and `sync_roles!` — diffs the requested role ids against the ones the actor
-currently holds and writes one `AuditEntry` per assignment
-(`role_assigned`) or revocation (`role_revoked`):
+No further code needed — the required permission is derived automatically
+from the controller and action (the same `module_name`/`action` pair
+`fetch_permissions` generated), using
+`Argus::Trail.config.action_name_mapper`. A signed-in actor without a role
+granting that permission gets a 403.
+
+## Wiring up your app
+
+**Recording role changes on an actor.** Use `Actor#sync_roles!` (instead of
+assigning `role_ids=`/`roles=` directly) so assignments and revocations land
+in the audit log, and use `has_permission?` to check a permission by name or
+by module + action:
 
 ```ruby
 user.sync_roles!([ admin_role.id, support_role.id ], changed_by: current_user)
+
+user.has_permission?("manage_billing")        # a plain, manually created permission
+user.has_permission?("admin/accounts", :read) # a module-wise permission
 ```
 
 An actor can hold any number of roles at once; assigning a single role is
 just the `new_role_ids.size == 1` case of the same call.
 
-**2. Tell the engine who's making changes**, once, in your `ApplicationController`:
-
-```ruby
-before_action { Argus::Trail.current_actor = current_user }
-```
-
-**3. Authorize the admin screens.** If you have Pundit, define policies —
-Argus::Trail uses Pundit's normal lookup, so these are just regular
-policies:
+**Authorizing the admin screens.** With neither Pundit nor
+`config.authorize_with` configured, the admin screens default to "any
+signed-in actor" — they work out of the box with zero policies. Tighten
+this with Pundit:
 
 ```ruby
 class Argus::Trail::RolePolicy < ApplicationPolicy
@@ -78,11 +105,10 @@ class Argus::Trail::RolePolicy < ApplicationPolicy
 end
 ```
 
-Do the same for `Argus::Trail::PermissionPolicy` and
-`Argus::Trail::AuditEntryPolicy`. Without Pundit — e.g. if your app uses
-CanCanCan, Action Policy, or nothing at all — set `config.authorize_with` to
-a proc instead; it always takes priority over Pundit, so this works even if
-Pundit happens to also be in your Gemfile:
+(define the same for `Argus::Trail::PermissionPolicy` and
+`Argus::Trail::AuditEntryPolicy`), or with a proc — which always takes
+priority over Pundit, so this works even if Pundit happens to also be in
+your Gemfile:
 
 ```ruby
 # config/initializers/argus_trail.rb
@@ -93,18 +119,7 @@ end
 
 See [`docs/INTEGRATION_GUIDE.md`](docs/INTEGRATION_GUIDE.md#8-step-6--authorization)
 for a wiring example per authorization gem (Pundit, CanCanCan, Action
-Policy, plain proc). With neither Pundit nor `authorize_with` configured,
-the engine fails closed and raises an actionable error rather than silently
-allowing access.
-
-## Recording role changes on an actor
-
-Use `Actor#sync_roles!` (instead of assigning `role_ids=`/`roles=` directly)
-so assignments and revocations land in the audit log:
-
-```ruby
-user.sync_roles!(params[:role_ids], changed_by: current_user)
-```
+Policy, plain proc).
 
 ## Recording permission changes on a role
 
@@ -148,6 +163,8 @@ Argus::Trail.configure do |config|
   config.current_actor_method = :current_user
   config.per_page             = 30
   config.layout                = nil    # e.g. "application"
+  config.permission_scan_excludes = []  # extra controller paths for fetch_permissions to skip
+  config.action_name_mapper = ->(action) { ... }  # see lib/argus/trail/configuration.rb for the default
 end
 ```
 

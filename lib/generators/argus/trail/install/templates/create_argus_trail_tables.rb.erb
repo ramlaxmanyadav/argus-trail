@@ -10,9 +10,20 @@ class CreateArgusTrailTables < ActiveRecord::Migration<%= migration_version %>
     create_table :argus_trail_permissions do |t|
       t.string :name, null: false
       t.string :description
+      # module_name/action back "module-wise" permissions — the rows
+      # `bin/rails argus_trail:fetch_permissions` generates from your routes
+      # (e.g. module_name: "admin/accounts", action: "read"). Both stay nil
+      # for a manually created, one-off permission.
+      t.string :module_name
+      t.string :action
       t.timestamps
     end
     add_index :argus_trail_permissions, :name, unique: true
+    # Composite, not module_name alone — every module-wise permission lookup
+    # (Actor#has_permission?, Authorizable) filters on both columns together,
+    # and the leftmost-prefix rule means this still serves a module_name-only
+    # query (grouped_by_module) just as well as a single-column index would.
+    add_index :argus_trail_permissions, [ :module_name, :action ]
 
     create_table :argus_trail_role_permissions do |t|
       t.references :role, null: false, foreign_key: { to_table: :argus_trail_roles }
@@ -43,5 +54,10 @@ class CreateArgusTrailTables < ActiveRecord::Migration<%= migration_version %>
       t.datetime :created_at, null: false
     end
     add_index :argus_trail_audit_entries, :event_type
+    # This table is append-only and grows forever (see AuditEntry's class
+    # comment) — .recent orders by created_at DESC on every paginated page
+    # load, and the admin screen's "Today" stat filters on it too, so an
+    # unindexed created_at turns into a full-table sort/scan as the log grows.
+    add_index :argus_trail_audit_entries, :created_at
   end
 end
